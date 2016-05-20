@@ -32,7 +32,6 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 import org.sonatype.aether.collection.DependencyCollectionException;
 import org.sonatype.aether.repository.RepositoryPolicy;
-import org.sonatype.aether.resolution.ArtifactResolutionException;
 import org.sonatype.aether.resolution.DependencyResolutionException;
 
 /**
@@ -147,8 +146,6 @@ public class ArtifactResolver extends Builder implements Serializable {
 
             } catch (DependencyCollectionException e) {
                 hasError = logError("failed collecting dependency info for " + a, logger, e);
-            } catch (ArtifactResolutionException e) {
-                hasError = logError("failed to resolve artifact for " + a, logger, e);
             } catch (IOException e) {
                 hasError = logError("failed collecting dependency info for " + a, logger, e);
             } catch (InterruptedException e) {

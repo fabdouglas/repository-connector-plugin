@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jvnet.hudson.plugins.repositoryconnector.aether.Aether;
+import org.jvnet.hudson.plugins.repositoryconnector.aether.VersionRangeResultWithLatest;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -64,22 +65,42 @@ public class VersionParameterDefinition extends
             File localRepo = RepositoryConfiguration.get().getLocalRepoPath();
             Aether aether = new Aether(DESCRIPTOR.getRepos(), localRepo);
             try {
-                List<Version> versions = aether.resolveVersions(groupid, artifactid);
+                // Get the versions
+                VersionRangeResultWithLatest versionsWithLatest = aether.resolveVersions(groupid, artifactid);
+                List<Version> versions = versionsWithLatest.getVersions();
+
+                // Reverse order to have the latest versions on top of the list
+                Collections.reverse(versions);
+
+                // Add the choice items
                 for (Version version : versions) {
-                    versionStrings.add(version.toString());
+                    items.add(new VersionLabel(version.toString(), version.toString()));
+                }
+
+                // Add the default parameters as needed
+                if (!items.isEmpty()) {
+                    items.add(0, toDefaultVersion(versionsWithLatest.getLatest(), "LATEST"));
+                    items.add(0, toDefaultVersion(versionsWithLatest.getRelease(), "RELEASE"));
                 }
             } catch (VersionRangeResolutionException ex) {
                 log.log(Level.SEVERE, "Could not determine versions", ex);
             }
-            if (!versionStrings.isEmpty()) {
-                // reverseorder to have the latest versions on top of the list
-                Collections.reverse(versionStrings);
-                // add the default parameters
-                versionStrings.add(0, "LATEST");
-                versionStrings.add(0, "RELEASE");
-            }
         }
-        return versionStrings;
+        return items;
+    }
+
+    /**
+     * Return a version type with its optional resolved version.
+     */
+    private VersionLabel toDefaultVersion(Version version, String type) {
+        log.info("toDefaultVersion "+version+","+type);
+        if (version == null) {
+            // No resolved version for this type
+            return new VersionLabel(type, type);
+        }
+
+        // Return the type with the version as suffix
+        return new VersionLabel(version.toString(), type);
     }
 
     @Exported
@@ -208,7 +229,7 @@ public class VersionParameterDefinition extends
             File localRepo = RepositoryConfiguration.get().getLocalRepoPath();
             Aether aether = new Aether(DESCRIPTOR.getRepos(), localRepo);
             try {
-                List<Version> versions = aether.resolveVersions(groupid, artifactid);
+                List<Version> versions = aether.resolveVersions(groupid, artifactid).getVersions();
                 if (versions.isEmpty()) {
                     result = FormValidation.error(Messages.NoVersions() + " " + groupid + "." + artifactid);
                     log.log(Level.FINE, "No versions found for " + groupid + "." + artifactid);
