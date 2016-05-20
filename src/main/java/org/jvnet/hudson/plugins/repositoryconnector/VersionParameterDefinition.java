@@ -58,9 +58,9 @@ public class VersionParameterDefinition extends
     }
 
     @Exported
-    public List<String> getChoices() {
+    public List<VersionLabel> getChoices() {
         Repository r = DESCRIPTOR.getRepo(repoid);
-        List<String> versionStrings = new ArrayList<String>();
+        List<VersionLabel> items = new ArrayList<VersionLabel>();
         if (r != null) {
             File localRepo = RepositoryConfiguration.get().getLocalRepoPath();
             Aether aether = new Aether(DESCRIPTOR.getRepos(), localRepo);
